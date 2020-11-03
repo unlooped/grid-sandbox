@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use App\Entity\Customer;
 use App\Entity\CustomerGroup;
-use App\Entity\InfluencerChannel;
 use App\Repository\CustomerGroupRepository;
 use Doctrine\ORM\NonUniqueResultException;
 use ReflectionException;
