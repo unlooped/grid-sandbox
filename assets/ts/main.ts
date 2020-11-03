@@ -1,5 +1,6 @@
-require('select2');
 import * as jQuery from "jquery";
+require('../../vendor/tetranz/select2entity-bundle/Resources/public/js/select2entity');
+require('select2');
 import {CollectionHelper} from '../../vendor/unlooped/ts-resources/src/helper/CollectionHelper';
 require('../../vendor/unlooped/grid-bundle/Resources/assets/ts/main');
 
