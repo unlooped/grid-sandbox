@@ -1,0 +1,204 @@
+{% extends '@UnloopedGrid/list.html.twig' %}
+
+{# @var grid \Unlooped\GridBundle\Model\Grid #}
+{% set baseRoute = app.request.attributes.get('_route')|replace({'.filter': ''}) %}
+
+{% block content %}
+    {% block list_head %}
+
+        {% if grid.createRoute %}
+            <div class="row mb-3">
+                <div class="col-12 col-md-4">
+                    <a href="{{ path(grid.createRoute) }}" class="btn btn-primary">
+                        {{ grid.createLabel|trans }}
+                        <span class="icon-plus-circled"></span>
+                    </a>
+                </div>
+                <div class="col-12 col-md-8 mt-3 mt-md-0 text-md-right pt-2">
+
+                </div>
+            </div>
+        {% endif %}
+    {% endblock %}
+    {% block filter %}
+        {% block flashbag %}
+            {% for flashMessage in app.session.flashbag.get('unlooped_grid.alert') %}
+                <div class="alert alert-danger alert-dismissible" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                    <div class="alert-icon">
+                        <i class="far fa-fw fa-bell"></i>
+                    </div>
+                    <div class="alert-message">
+                        <strong>{% trans %}unlooped_grid.flash_message.warning{% endtrans %}</strong> {{ flashMessage|trans }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% endblock %}
+        {% if grid.filterData|length > 0 %}
+            <div class="card mb-3 fs--1">
+                <div class="box-nav">
+                    <ul class="nav mr-auto">
+                        <li class="nav-item">
+                            <a class="nav-link{% if not grid.filterApplied %} active{% endif %}"
+                               href="{{ path(baseRoute) }}">All {{ grid.title }}</a>
+                        </li>
+                        {% if grid.filterApplied and not grid.filter.hash %}
+                            <li class="nav-item">
+                                <a class="nav-link active">Current Filter</a>
+                            </li>
+                        {% endif %}
+                        {% for filter in grid.existingFilters %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if grid.filter.hash == filter.hash %}active{% endif %}" href="{{ path(baseRoute ~ '.filter', {'filterHash': filter.hash}) }}">{{ filter.name }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <ul class="nav justify-content-end">
+                        <li class="nav-item">
+                            <a class="nav-link {% if not grid.filterApplied and not grid.filter.hasDefaultShowFilter %} collapsed{% endif %}" data-toggle="collapse"
+                               href="#filterBox" role="button" aria-expanded="false" aria-controls="collapseExample">
+                                Filter <span class="icon-filter"></span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="collapse{% if grid.filterApplied or grid.filter.hasDefaultShowFilter %} show{% endif %}" id="filterBox">
+                    <div class="card-body bg-light">
+                        {{ form_start(grid.filterFormView, {'attr': {'data-ug-filter': grid.filtersAsJson}}) }}
+                        <div class="row">
+                            <div class="col-md-9">
+                                <div class="row">
+                                    <div class="col-2">
+                                        <label>Field</label>
+                                    </div>
+                                    <div class="col-3 filter-condition-column d-none">
+                                        <label>Condition</label>
+                                    </div>
+                                    <div class="col-7">
+                                        <label>Value</label>
+                                    </div>
+                                </div>
+                                {% include '@UnloopedGrid/_collection.html.twig' with {
+                                    'data': grid.filterFormView.rows,
+                                    'rowTemplate': '@UnloopedGrid/_filter_row.html.twig',
+                                    'addBtnSel': '#add-filter-btn',
+                                    'deleteBtnSel': '.delete-btn-filterrow',
+                                    'showAddButton': false,
+                                } %}
+                            </div>
+                            <div class="col-md-3 mt-3 mt-md-0 mb-md-3 d-flex align-self-end">
+                                <button type="button" class="btn btn-secondary btn-sm align-self-end" id="add-filter-btn">
+                                    {% trans %}Add Rule{% endtrans %}
+                                    <span class="icon-plus-circled"></span>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-link" data-toggle="advanced-filter">Advanced Filter</button>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                {% if grid.saveFilter %}
+                                    {% if grid.filter.hash %}
+                                        {% if grid.filter.default %}
+                                            {{ form_widget(grid.filterFormView.remove_default) }}
+                                        {% else %}
+                                            {{ form_widget(grid.filterFormView.make_default) }}
+                                        {% endif %}
+                                    {% endif %}
+
+                                    {% if grid.filterFormView.delete_filter is defined %}
+                                        <div class="btn-group">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-danger dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                    Delete Filter
+                                                </button>
+                                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                                    {{ form_widget(grid.filterFormView.delete_filter) }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+
+                                    {{ form_widget(grid.filterFormView.filter, {'attr': {'class': ' btn-primary d-inline-block float-right'}}) }}
+                                    <div class="d-inline-block">
+                                        <div class="input-group">
+                                            {{ form_widget(grid.filterFormView.name) }}
+                                            <div class="input-group-append">
+                                                {{ form_widget(grid.filterFormView.filter_and_save, {'attr': {'class': 'btn-secondary'}}) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    {{ form_widget(grid.filterFormView.filter, {'attr': {'class': 'btn-sm btn-primary d-inline-block'}}) }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        {{ form_end(grid.filterFormView) }}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endblock %}
+
+    {% block list %}
+        {% block list_header %}
+            <div class="row align-items-end">
+                {% block pagination_top %}
+                    {% include grid.paginationTemplate with {'grid': grid} only %}
+                {% endblock %}
+            </div>
+        {% endblock %}
+        {% block list_body %}
+            <div class="card mb-3 list-table-card">
+                {% block list_title %}
+                    <div class="card-header">
+                        <div class="row align-items-center justify-content-between">
+                            <div class="col-4 col-sm-auto d-flex align-items-center pr-0">
+                                {% if grid.title %}
+                                    <h5 class="fs-0 mb-0 text-nowrap py-2 py-xl-0">{{ grid.title }}</h5>
+                                {% endif %}
+                            </div>
+                            <div class="col-8 col-sm-auto text-right pl-2">
+                                <div id="customer-table-actions">
+                                    {% if actions is defined %}
+                                        {% for action in actions %}
+                                            <a href="{{ path(action.route) }}" class="btn btn-falcon-default btn-sm {{ action.style_class }}">
+                                                {% if action.icon %}
+                                                    <span class="{{ action.icon }}" data-fa-transform="shrink-3 down-2"></span>
+                                                {% endif %}
+                                                {{ action.label }}
+                                            </a>
+                                        {% endfor %}
+                                    {% endif %}
+                                    {#                    <button class="btn btn-falcon-default btn-sm" type="button"><span class="fas fa-external-link-alt" data-fa-transform="shrink-3 down-2"></span><span class="d-none d-sm-inline-block ml-1">Export</span></button>#}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endblock %}
+
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-sm table-hover mb-0 table-striped table-dashboard fs--1 border-bottom border-200">
+                        <thead class="bg-200 text-900">
+                        {% include grid.listHeaderTemplate with {'grid': grid} %}
+                        </thead>
+                        <tbody>
+                        {% for data in grid.pagination %}
+                            {% include grid.listRow with {'data': data} %}
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endblock %}
+        {% block list_footer %}
+            <div class="row align-items-end">
+                {% block pagination_bottom %}
+                    {% include grid.paginationTemplate with {'grid': grid} only %}
+                {% endblock %}
+            </div>
+        {% endblock %}
+
+    {% endblock %}
+{% endblock %}

@@ -1,12 +1,36 @@
 <!DOCTYPE html>
-<html>
+<html id="top">
+{% block head %}
     <head>
         <meta charset="UTF-8">
-        <title>{% block title %}Welcome!{% endblock %}</title>
-        {% block stylesheets %}{% endblock %}
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="theme-color" content="#ffffff"/>
+        <title>Grid Sandbox</title>
+        <!--[if IE]>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+        {% block stylesheets %}
+            {{ encore_entry_link_tags('app') }}
+        {% endblock %}
     </head>
-    <body>
-        {% block body %}{% endblock %}
-        {% block javascripts %}{% endblock %}
-    </body>
+{% endblock %}
+
+{% block body %}
+<body>
+{% endblock %}
+{% block inner_body %}
+<div class="container">
+    <div class="wrapper">
+        {% block content %}
+
+        {% endblock %}
+    </div>
+</div>
+
+
+{% block javascripts %}
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=Intl.~locale.de-DE"></script>
+    {{ encore_entry_script_tags('app') }}
+{% endblock %}
+{% endblock %}
+</body>
 </html>

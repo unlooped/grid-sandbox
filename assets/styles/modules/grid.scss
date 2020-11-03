@@ -1,0 +1,45 @@
+.box-nav {
+    display: flex;
+    border-bottom: 1px solid $light;
+
+    .nav {
+        margin-bottom: -1px;
+    }
+
+    .nav-link {
+        border-bottom: 2px solid $light;
+        padding: .75rem;
+
+        &[data-toggle="collapse"] {
+            border-bottom: 2px solid $primary;
+        }
+
+        &.collapsed {
+            border-bottom: 2px solid $light;
+        }
+
+        &:hover:not(.active) {
+            border-bottom: 2px solid rgba($primary, 0.5);
+        }
+    }
+
+    .active {
+        font-weight: bold;
+        border-bottom: 2px solid $primary;
+    }
+}
+
+.list-table-card {
+    th {
+        &:last-child {
+            padding-right: $card-spacer-x;
+        }
+    }
+    tbody {
+        td {
+            padding-top: ($spacer * .5);
+            padding-bottom: ($spacer * .5);
+            vertical-align: middle;
+        }
+    }
+}
