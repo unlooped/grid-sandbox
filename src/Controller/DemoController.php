@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Customer;
+use App\Repository\CustomerGroupRepository;
 use Doctrine\ORM\NonUniqueResultException;
 use ReflectionException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -11,6 +12,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Unlooped\GridBundle\ColumnType\LocalizedDateColumn;
 use Unlooped\GridBundle\Exception\DuplicateColumnException;
 use Unlooped\GridBundle\Exception\DuplicateFilterException;
+use Unlooped\GridBundle\FilterType\ChoiceFilterType;
 use Unlooped\GridBundle\FilterType\DateRangeFilterType;
 use Unlooped\GridBundle\Service\GridService;
 
@@ -27,16 +29,26 @@ class DemoController extends AbstractController
      */
     public function index(
         GridService $gridService,
+        CustomerGroupRepository $customerGroupRepository,
         string $filterHash = null
     ): Response
     {
         $gh = $gridService->getGridHelper(Customer::class, [
-            'title' => 'Customers',
+            'title'             => 'Customers',
+            'allow_save_filter' => true,
         ], $filterHash);
 
         $gh->addColumn('firstName');
         $gh->addColumn('lastName');
+        $gh->addColumn('customerGroup.name');
         $gh->addColumn('createdAt', LocalizedDateColumn::class);
+
+
+        $availableGroups = [];
+        foreach ($customerGroupRepository->findAll() as $group) {
+            $fullName = $group->getName();
+            $availableGroups[$fullName] = $fullName;
+        }
 
         $gh->addFilter('firstName');
         $gh->addFilter('lastName');
@@ -46,6 +58,12 @@ class DemoController extends AbstractController
             'label' => 'Created At',
             'default_data' => DateRangeFilterType::createDefaultDataForRangeVariables('ONE_WEEK_AGO', 'TODAY'),
         ]);
+        $gh->addFilter('customerGroup.name', ChoiceFilterType::class, [
+            'show_filter' => true,
+            'label'       => 'Group',
+            'choices'     => $availableGroups,
+        ]);
+
 
         return $gridService->render('default/grid.html.twig', $gh);
     }
