@@ -6,6 +6,8 @@ use App\Entity\Customer;
 use App\Entity\CustomerGroup;
 use App\Repository\CustomerGroupRepository;
 use Doctrine\ORM\NonUniqueResultException;
+use Doctrine\ORM\OptimisticLockException;
+use Doctrine\ORM\ORMException;
 use ReflectionException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -13,12 +15,16 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\Routing\Annotation\Route;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 use Unlooped\GridBundle\ColumnType\LocalizedDateColumn;
 use Unlooped\GridBundle\Exception\DuplicateColumnException;
 use Unlooped\GridBundle\Exception\DuplicateFilterException;
-use Unlooped\GridBundle\FilterType\AutocompleteFilterType;
-use Unlooped\GridBundle\FilterType\ChoiceFilterType;
+use Unlooped\GridBundle\Exception\TypeNotAColumnException;
+use Unlooped\GridBundle\Exception\TypeNotAFilterException;
 use Unlooped\GridBundle\FilterType\DateRangeFilterType;
+use Unlooped\GridBundle\FilterType\EntityFilterType;
 use Unlooped\GridBundle\Service\GridService;
 
 class DemoController extends AbstractController
@@ -27,14 +33,20 @@ class DemoController extends AbstractController
      * @Route("/", name="index")
      * @Route("/{filterHash}", name="index.filter")
      *
-     * @throws NonUniqueResultException
-     * @throws ReflectionException
      * @throws DuplicateColumnException
      * @throws DuplicateFilterException
+     * @throws NonUniqueResultException
+     * @throws ReflectionException
+     * @throws ORMException
+     * @throws OptimisticLockException
+     * @throws LoaderError
+     * @throws RuntimeError
+     * @throws SyntaxError
+     * @throws TypeNotAColumnException
+     * @throws TypeNotAFilterException
      */
     public function index(
         GridService $gridService,
-        CustomerGroupRepository $customerGroupRepository,
         string $filterHash = null
     ): Response
     {
@@ -48,13 +60,6 @@ class DemoController extends AbstractController
         $gh->addColumn('customerGroup.name');
         $gh->addColumn('createdAt', LocalizedDateColumn::class);
 
-
-        $availableGroups = [];
-        foreach ($customerGroupRepository->findAll() as $group) {
-            $fullName = $group->getName();
-            $availableGroups[$fullName] = $fullName;
-        }
-
         $gh->addFilter('firstName');
         $gh->addFilter('lastName');
         $gh->addFilter('createdAt', DateRangeFilterType::class, [
@@ -63,21 +68,11 @@ class DemoController extends AbstractController
             'label' => 'Created At',
             'default_data' => DateRangeFilterType::createDefaultDataForRangeVariables('ONE_WEEK_AGO', 'TODAY'),
         ]);
-        $gh->addFilter('customerGroup.name', ChoiceFilterType::class, [
+        $gh->addFilter('customerGroup', EntityFilterType::class, [
             'show_filter' => true,
             'label'       => 'Group',
-            'choices'     => $availableGroups,
+            'class'       => CustomerGroup::class,
         ]);
-
-        $gh->addFilter('customerGroup', AutocompleteFilterType::class, [
-            'show_filter'          => true,
-            'label'                => 'Group Autocomplete',
-            'route'                => 'xhr_groups',
-            'entity'               => CustomerGroup::class,
-            'minimum_input_length' => 1,
-            'text_property'        => 'name',
-        ]);
-
 
         return $gridService->render('default/grid.html.twig', $gh);
     }
