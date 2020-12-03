@@ -23,8 +23,8 @@ use Unlooped\GridBundle\Exception\DuplicateColumnException;
 use Unlooped\GridBundle\Exception\DuplicateFilterException;
 use Unlooped\GridBundle\Exception\TypeNotAColumnException;
 use Unlooped\GridBundle\Exception\TypeNotAFilterException;
+use Unlooped\GridBundle\FilterType\AutocompleteFilterType;
 use Unlooped\GridBundle\FilterType\DateRangeFilterType;
-use Unlooped\GridBundle\FilterType\EntityFilterType;
 use Unlooped\GridBundle\Service\GridService;
 
 class DemoController extends AbstractController
@@ -68,10 +68,14 @@ class DemoController extends AbstractController
             'label' => 'Created At',
             'default_data' => DateRangeFilterType::createDefaultDataForRangeVariables('ONE_WEEK_AGO', 'TODAY'),
         ]);
-        $gh->addFilter('customerGroup', EntityFilterType::class, [
-            'show_filter' => true,
-            'label'       => 'Group',
-            'class'       => CustomerGroup::class,
+
+        $gh->addFilter('customerGroup', AutocompleteFilterType::class, [
+            'show_filter'          => true,
+            'label'                => 'Group Autocomplete',
+            'route'                => 'xhr_groups',
+            'entity'               => CustomerGroup::class,
+            'minimum_input_length' => 1,
+            'text_property'        => 'name',
         ]);
 
         return $gridService->render('default/grid.html.twig', $gh);
