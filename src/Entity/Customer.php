@@ -36,6 +36,11 @@ class Customer
      */
     private $customerGroup;
 
+    /**
+     * @ORM\ManyToMany(targetEntity=Tag::class, inversedBy="tags")
+     */
+    private $tags;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -63,6 +68,22 @@ class Customer
         $this->lastName = $lastName;
 
         return $this;
+    }
+
+    /**
+     * @return Tag[]
+     */
+    public function getTags()
+    {
+        return $this->tags;
+    }
+
+    /**
+     * @param Tag[] $tags
+     */
+    public function setTags($tags): void
+    {
+        $this->tags = $tags;
     }
 
     public function getCustomerGroup(): ?CustomerGroup
