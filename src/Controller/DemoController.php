@@ -2,29 +2,21 @@
 
 namespace App\Controller;
 
-use App\Entity\Customer;
-use App\Entity\CustomerGroup;
-use App\Repository\CustomerGroupRepository;
+use App\Grid\DemoGrid;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\ORMException;
 use ReflectionException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\Routing\Annotation\Route;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
-use Unlooped\GridBundle\ColumnType\LocalizedDateColumn;
 use Unlooped\GridBundle\Exception\DuplicateColumnException;
 use Unlooped\GridBundle\Exception\DuplicateFilterException;
 use Unlooped\GridBundle\Exception\TypeNotAColumnException;
 use Unlooped\GridBundle\Exception\TypeNotAFilterException;
-use Unlooped\GridBundle\FilterType\AutocompleteFilterType;
-use Unlooped\GridBundle\FilterType\DateRangeFilterType;
 use Unlooped\GridBundle\Service\GridService;
 
 class DemoController extends AbstractController
@@ -47,80 +39,17 @@ class DemoController extends AbstractController
      */
     public function index(
         GridService $gridService,
-        string $filterHash = null
+        ?string $filterHash = null,
+        DemoGrid $grid
     ): Response
     {
-        $gh = $gridService->getGridHelper(Customer::class, [
+        $gh = $gridService->getGridHelper($grid->getModel(), [
             'title'             => 'Customers',
             'allow_save_filter' => true,
         ], $filterHash);
 
-        $gh->addColumn('firstName');
-        $gh->addColumn('lastName');
-        $gh->addColumn('customerGroup.name');
-        $gh->addColumn('createdAt', LocalizedDateColumn::class);
-
-        $gh->addFilter('firstName');
-        $gh->addFilter('lastName');
-        $gh->addFilter('createdAt', DateRangeFilterType::class, [
-            'view_timezone' => 'UTC',
-            'show_filter' => true,
-            'label' => 'Created At',
-            'default_data' => DateRangeFilterType::createDefaultDataForRangeVariables('ONE_WEEK_AGO', 'TODAY'),
-        ]);
-
-        $gh->addFilter('customerGroup', AutocompleteFilterType::class, [
-            'show_filter'          => true,
-            'label'                => 'Group Autocomplete',
-            'route'                => 'xhr_groups',
-            'entity'               => CustomerGroup::class,
-            'minimum_input_length' => 1,
-            'text_property'        => 'name',
-        ]);
+        $grid->configure($gh);
 
         return $gridService->render('default/grid.html.twig', $gh);
-    }
-
-    /**
-     * @Route("/xhr/groups", name="xhr_groups")
-     */
-    public function xhrGroups(
-        CustomerGroupRepository $customerGroupRepository,
-        Request $request
-    )
-    {
-        $term = $request->get('q');
-
-        $countQB = $customerGroupRepository->createQueryBuilder('e');
-        $countQB
-            ->select($countQB->expr()->count('e'))
-            ->setParameter('term', '%' . $term . '%')
-        ;
-
-        $maxResults = 10;
-        $offset = ($request->get('page', 1) - 1) * $maxResults;
-
-        $resultQb = $customerGroupRepository->createQueryBuilder('e');
-        $resultQb
-            ->setParameter('term', '%' . $term . '%')
-            ->setMaxResults($maxResults)
-            ->setFirstResult($offset)
-        ;
-
-        $countQB->where('e.name LIKE :term');
-        $resultQb->where('e.name LIKE :term');
-
-        $count = $countQB->getQuery()->getSingleScalarResult();
-        $paginationResults = $resultQb->getQuery()->getResult();
-
-        $result = ['results' => null, 'more' => $count > ($offset + $maxResults)];
-
-        $accessor = PropertyAccess::createPropertyAccessor();
-
-        $result['results'] = array_map(static function ($item) use ($accessor) {
-            return ['id' => $accessor->getValue($item, 'id'), 'text' => $accessor->getValue($item, 'name')];
-        }, $paginationResults);
-
-        return new JsonResponse($result);
     }
 }
