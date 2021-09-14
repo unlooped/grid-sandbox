@@ -67,6 +67,8 @@
                 <div class="collapse{% if grid.filterApplied or grid.filter.hasDefaultShowFilter %} show{% endif %}" id="filterBox">
                     <div class="card-body bg-light">
                         {{ form_start(grid.filterFormView, {'attr': {'data-ug-filter': grid.filtersAsJson}}) }}
+                        {{ form_errors(grid.filterFormView) }}
+
                         <div class="row">
                             <div class="col-md-9">
                                 <div class="row">
